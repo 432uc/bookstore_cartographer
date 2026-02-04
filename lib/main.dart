@@ -33,7 +33,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   // 画面リスト：0番目を「BookstoreHomePage」に差し替え
   final List<Widget> _pages = [
     const BookstoreHomePage(), // ホーム（本屋リスト）
-    const Center(child: Text('計測：PDRマッピング（核心機能）')), 
+    const Center(child: Text('計測：PDRマッピング（メイン機能）')), 
     const Center(child: Text('書籍リスト：出会った本')), 
     const Center(child: Text('設定：スプレッドシート連携')), 
   ];
