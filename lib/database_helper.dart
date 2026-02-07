@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'models/bookstore.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -10,43 +10,29 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    print('Database: initialize start');
-    _database = await _initDB('bookstore_web.db');
-    print('Database: initialize end');
+    _database = await _initDB('bookstore_cartographer.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
-    print('Database: initialize for path $filePath (Web: $kIsWeb)');
-    
-    // Webの場合はパス結合をスキップ
-    String path;
-    if (kIsWeb) {
-      path = filePath;
-    } else {
-      final dbPath = await getDatabasesPath();
-      path = join(dbPath, filePath);
-    }
-    
-    print('Database: opening database at $path');
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
   }
 
-  // テーブルの作成（最初は「本屋」テーブル）
   Future _createDB(Database db, int version) async {
-    print('Database: creating table stores');
     await db.execute('''
       CREATE TABLE stores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        branch TEXT,
-        memo TEXT,
-        visit_date TEXT,
+        station TEXT,
+        registers INTEGER,
         has_toilet INTEGER DEFAULT 0,
         has_cafe INTEGER DEFAULT 0
       )
@@ -54,28 +40,41 @@ class DatabaseHelper {
   }
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    print('Database: upgrading from $oldVersion to $newVersion');
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE stores ADD COLUMN has_toilet INTEGER DEFAULT 0');
       await db.execute('ALTER TABLE stores ADD COLUMN has_cafe INTEGER DEFAULT 0');
     }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE stores ADD COLUMN station TEXT');
+      await db.execute('ALTER TABLE stores ADD COLUMN registers INTEGER');
+    }
   }
 
-  // データの登録用メソッド
-  Future<int> insertStore(Map<String, dynamic> row) async {
-    print('Database: insertStoreInternal start');
+  Future<int> insertStore(Bookstore store) async {
     final db = await instance.database;
-    final id = await db.insert('stores', row);
-    print('Database: insertStoreInternal end, id: $id');
-    return id;
+    return await db.insert('stores', store.toMap());
   }
-  // database_helper.dart の中に追加
-  Future<List<Map<String, dynamic>>> queryAllStores() async {
-    print('Database: queryAllStores start');
+
+  Future<List<Bookstore>> queryAllStores() async {
     final db = await instance.database;
-    // storesテーブルのデータをすべて取得（新しい順：id DESC）
     final result = await db.query('stores', orderBy: 'id DESC');
-    print('Database: queryAllStores end, count: ${result.length}');
-    return result;
+    return result.map((json) => Bookstore(
+      id: json['id'] as int?,
+      name: json['name'] as String,
+      station: (json['station'] as String?) ?? '',
+      registers: (json['registers'] as int?) ?? 0,
+      hasToilet: (json['has_toilet'] as int) == 1,
+      hasCafe: (json['has_cafe'] as int) == 1,
+    )).toList();
+  }
+
+  Future<int> updateStore(Bookstore store) async {
+    final db = await instance.database;
+    return await db.update(
+      'stores',
+      store.toMap(),
+      where: 'id = ?',
+      whereArgs: [store.id],
+    );
   }
 }
