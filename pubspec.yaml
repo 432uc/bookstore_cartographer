@@ -37,6 +37,8 @@ dependencies:
   path: ^1.9.0
   cupertino_icons: ^1.0.8
   sqflite_common_ffi_web: ^0.4.4
+  google_maps_flutter: ^2.6.1
+  geocoding: ^3.0.0
 
 dev_dependencies:
   flutter_test:

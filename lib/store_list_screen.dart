@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bookstore_cartographer/l10n/app_localizations.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'database_helper.dart';
 import 'models/bookstore.dart';
 
@@ -29,6 +31,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
     _hasToilet = false;
     _hasCafe = false;
     String inputName = '';
+    String address = '';
 
     showDialog(
       context: context,
@@ -42,6 +45,10 @@ class _StoreListScreenState extends State<StoreListScreen> {
                 TextField(
                   decoration: InputDecoration(labelText: AppLocalizations.of(context)!.bookstoreName),
                   onChanged: (value) => inputName = value,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.address),
+                  onChanged: (value) => address = value,
                 ),
                 CheckboxListTile(
                   title: Text(AppLocalizations.of(context)!.hasToilet),
@@ -73,6 +80,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
                     registers: 0,
                     hasToilet: _hasToilet,
                     hasCafe: _hasCafe,
+                    address: address,
                   );
                   await DatabaseHelper.instance.insertStore(newBookstore);
                   if (!context.mounted) return;
@@ -114,7 +122,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
               return ListTile(
                 leading: Icon(Icons.book),
                 title: Text(store.name),
-                subtitle: Text(store.station),
+                subtitle: Text(store.address),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -157,8 +165,11 @@ class _BookstoreDetailPageState extends State<BookstoreDetailPage> {
   late TextEditingController _nameController;
   late TextEditingController _stationController;
   late TextEditingController _registersController;
+  late TextEditingController _addressController;
   late bool _hasToilet;
   late bool _hasCafe;
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
@@ -166,8 +177,39 @@ class _BookstoreDetailPageState extends State<BookstoreDetailPage> {
     _nameController = TextEditingController(text: widget.bookstore.name);
     _stationController = TextEditingController(text: widget.bookstore.station);
     _registersController = TextEditingController(text: widget.bookstore.registers.toString());
+    _addressController = TextEditingController(text: widget.bookstore.address);
     _hasToilet = widget.bookstore.hasToilet;
     _hasCafe = widget.bookstore.hasCafe;
+    if (widget.bookstore.address.isNotEmpty) {
+      _updateMarker();
+    }
+  }
+
+  Future<void> _updateMarker() async {
+    if (_addressController.text.isNotEmpty) {
+      try {
+        final locations = await locationFromAddress(_addressController.text);
+        if (locations.isNotEmpty) {
+          final location = locations.first;
+          setState(() {
+            _markers = {
+              Marker(
+                markerId: MarkerId(widget.bookstore.id.toString()),
+                position: LatLng(location.latitude, location.longitude),
+                infoWindow: InfoWindow(title: widget.bookstore.name),
+              )
+            };
+          });
+          _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(location.latitude, location.longitude), 15));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error finding address: $e')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -193,6 +235,11 @@ class _BookstoreDetailPageState extends State<BookstoreDetailPage> {
               decoration: InputDecoration(labelText: AppLocalizations.of(context)!.registers),
               keyboardType: TextInputType.number,
             ),
+            TextField(
+              controller: _addressController,
+              decoration: InputDecoration(labelText: AppLocalizations.of(context)!.address),
+              onChanged: (value) => _updateMarker(),
+            ),
             CheckboxListTile(
               title: Text(AppLocalizations.of(context)!.hasToilet),
               value: _hasToilet,
@@ -211,6 +258,20 @@ class _BookstoreDetailPageState extends State<BookstoreDetailPage> {
                 });
               },
             ),
+            Expanded(
+              child: GoogleMap(
+                onMapCreated: (controller) {
+                  print("Map created!");
+                  _mapController = controller;
+                  _updateMarker();
+                },
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(35.681236, 139.767125), // Default to Tokyo Station
+                  zoom: 15,
+                ),
+                markers: _markers,
+              ),
+            ),
             ElevatedButton(
               onPressed: () async {
                 final updatedBookstore = Bookstore(
@@ -218,6 +279,7 @@ class _BookstoreDetailPageState extends State<BookstoreDetailPage> {
                   name: _nameController.text,
                   station: _stationController.text,
                   registers: int.parse(_registersController.text),
+                  address: _addressController.text,
                   hasToilet: _hasToilet,
                   hasCafe: _hasCafe,
                 );

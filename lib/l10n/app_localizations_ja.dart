@@ -22,4 +22,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get hasCafe => 'カフェ';
+
+  @override
+  String get address => '住所';
 }

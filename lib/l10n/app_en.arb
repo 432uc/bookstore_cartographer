@@ -1,8 +1,8 @@
-
 {
   "bookstoreName": "Bookstore Name",
   "station": "Nearest Station",
   "registers": "Number of Registers",
   "hasToilet": "Restroom",
-  "hasCafe": "Cafe"
+  "hasCafe": "Cafe",
+  "address": "Address"
 }

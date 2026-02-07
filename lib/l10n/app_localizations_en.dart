@@ -22,4 +22,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hasCafe => 'Cafe';
+
+  @override
+  String get address => 'Address';
 }
