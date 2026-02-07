@@ -25,4 +25,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get address => '住所';
+
+  @override
+  String get map => '地図';
 }

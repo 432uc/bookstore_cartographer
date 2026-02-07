@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:bookstore_cartographer/l10n/app_localizations.dart';
+import 'package:bookstore_cartographer/map_screen.dart';
 import 'store_list_screen.dart';
 
 void main() {
@@ -49,12 +50,11 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
 
-  // 画面リスト：0番目を「StoreListScreen」に差し替え
   final List<Widget> _pages = [
-    StoreListScreen(), // ホーム（本屋リスト）
-    const Center(child: Text('計測：PDRマッピング（メイン機能）')), 
-    const Center(child: Text('書籍リスト：出会った本')), 
-    const Center(child: Text('設定：スプレッドシート連携')), 
+    StoreListScreen(),
+    MapScreen(),
+    const Center(child: Text('書籍リスト：出会った本')),
+    const Center(child: Text('設定：スプレッドシート連携')),
   ];
 
   void _onItemTapped(int index) {
@@ -67,7 +67,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App Maker - 本屋アプリ'),
+        title: const Text('Bookstore Cartographer'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _pages[_selectedIndex],
@@ -75,9 +75,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: '計測'),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.bookstoreName),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: AppLocalizations.of(context)!.map),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: '書籍'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
         ],

@@ -4,5 +4,6 @@
   "registers": "レジ台数",
   "hasToilet": "トイレ",
   "hasCafe": "カフェ",
-  "address": "住所"
+  "address": "住所",
+  "map": "地図"
 }

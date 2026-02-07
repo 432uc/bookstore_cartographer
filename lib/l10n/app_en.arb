@@ -4,5 +4,6 @@
   "registers": "Number of Registers",
   "hasToilet": "Restroom",
   "hasCafe": "Cafe",
-  "address": "Address"
+  "address": "Address",
+  "map": "Map"
 }
