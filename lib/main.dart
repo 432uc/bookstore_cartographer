@@ -5,17 +5,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:bookstore_cartographer/l10n/app_localizations.dart';
 import 'package:bookstore_cartographer/map_screen.dart';
+import 'package:bookstore_cartographer/camera_screen.dart';
+import 'package:camera/camera.dart';
 import 'store_list_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // main() 関数を非同期にし、カメラの初期化を待つ
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 利用可能なカメラのリストを取得
+  final cameras = await availableCameras();
+
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWeb;
   }
-  runApp(const AppMakerProject());
+  runApp(AppMakerProject(cameras: cameras));
 }
 
 class AppMakerProject extends StatelessWidget {
-  const AppMakerProject({super.key});
+  final List<CameraDescription> cameras;
+  const AppMakerProject({super.key, required this.cameras});
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +44,14 @@ class AppMakerProject extends StatelessWidget {
         Locale('en', ''),
         Locale('ja', ''),
       ],
-      home: const MainNavigationPage(),
+      home: MainNavigationPage(cameras: cameras),
     );
   }
 }
 
 class MainNavigationPage extends StatefulWidget {
-  const MainNavigationPage({super.key});
+  final List<CameraDescription> cameras;
+  const MainNavigationPage({super.key, required this.cameras});
 
   @override
   State<MainNavigationPage> createState() => _MainNavigationPageState();
@@ -49,13 +59,20 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
+  final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
 
-  final List<Widget> _pages = [
-    StoreListScreen(),
-    MapScreen(),
-    const Center(child: Text('書籍リスト：出会った本')),
-    const Center(child: Text('設定：スプレッドシート連携')),
-  ];
+  late List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      StoreListScreen(),
+      MapScreen(key: _mapScreenKey),
+      const Center(child: Text('書籍リスト：出会った本')),
+      const Center(child: Text('設定：スプレッドシート連携')),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -81,6 +98,22 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           BottomNavigationBarItem(icon: Icon(Icons.book), label: '書籍'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CameraScreen(cameras: widget.cameras),
+            ),
+          );
+          if (result == true) {
+            // 写真を撮って登録されたら、地図のピンを再読み込み
+            _mapScreenKey.currentState?.loadBookstores();
+            // ホーム画面（リスト）の更新が必要な場合は、そこも同様に
+          }
+        },
+        child: const Icon(Icons.camera_alt),
       ),
     );
   }
