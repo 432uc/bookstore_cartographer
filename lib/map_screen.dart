@@ -62,12 +62,18 @@ class MapScreenState extends State<MapScreen> {
   }
 
   void _addMarker(Bookstore bookstore, LatLng position) {
+    String snippet = '${bookstore.address}';
+    if (bookstore.area != null && bookstore.area! > 0) {
+      snippet += '\n面積: ${bookstore.area!.toStringAsFixed(1)}㎡';
+    }
+    snippet += '\nToilet: ${bookstore.hasToilet ? 'Yes' : 'No'}, Cafe: ${bookstore.hasCafe ? 'Yes' : 'No'}';
+
     final marker = Marker(
       markerId: MarkerId(bookstore.id.toString()),
       position: position,
       infoWindow: InfoWindow(
         title: bookstore.name,
-        snippet: '${bookstore.address}\nToilet: ${bookstore.hasToilet ? 'Yes' : 'No'}, Cafe: ${bookstore.hasCafe ? 'Yes' : 'No'}',
+        snippet: snippet,
       ),
     );
     setState(() {

@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -41,7 +41,9 @@ class DatabaseHelper {
         registers INTEGER,
         has_toilet INTEGER DEFAULT 0,
         has_cafe INTEGER DEFAULT 0,
-        address TEXT
+        address TEXT,
+        path_data TEXT,
+        area REAL
       )
     ''');
   }
@@ -57,6 +59,10 @@ class DatabaseHelper {
     }
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE stores ADD COLUMN address TEXT');
+    }
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE stores ADD COLUMN path_data TEXT');
+      await db.execute('ALTER TABLE stores ADD COLUMN area REAL');
     }
   }
 
@@ -76,6 +82,8 @@ class DatabaseHelper {
       hasToilet: (json['has_toilet'] as int) == 1,
       hasCafe: (json['has_cafe'] as int) == 1,
       address: (json['address'] as String?) ?? '',
+      pathData: json['path_data'] as String?,
+      area: json['area'] as double?,
     )).toList();
   }
 
